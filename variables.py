@@ -1,19 +1,9 @@
-import psycopg2
-from urllib.parse import urlparse
 import os
+import psycopg2
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-if DATABASE_URL:
-    conexion = psycopg2.connect(DATABASE_URL)
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL não configurada no ambiente.")
 
-else:
-    conexion = psycopg2.connect(
-        host = "localhost",
-        database = "controle_atendimentos",
-        user = "postgres",
-        password = "Renan1013",
-        port = 5432,
-    )
-
-
-
+conexion = psycopg2.connect(DATABASE_URL)
