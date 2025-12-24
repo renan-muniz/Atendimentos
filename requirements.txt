@@ -1,0 +1,7 @@
+Flask
+Flask-Login
+gunicorn
+psycopg2-binary
+pandas
+python-dotenv
+Werkzeug
