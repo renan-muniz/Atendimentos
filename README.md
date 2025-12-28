@@ -6,9 +6,9 @@ This project was developed with a **backend-first and data-centric approach**, f
 
 ---
 
-![imagem](images/image_1.png)
-![imagem](images/image_2.png)
-![imagem](images/image_3.png)
+![imagem](images/Image_1.png)
+![imagem](images/Image_2.png)
+![imagem](images/Image_3.png)
 
 
 ---
