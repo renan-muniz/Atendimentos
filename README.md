@@ -6,6 +6,12 @@ This project was developed with a **backend-first and data-centric approach**, f
 
 ---
 
+![imagem](images/Image_1.png)
+![imagem](images/Image_2.png)
+![imagem](images/Image_3.png)
+
+
+---
 ## Project Motivation
 
 The application was created to replace a manual workflow based on paper notes and monthly calculations.
