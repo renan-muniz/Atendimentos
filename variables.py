@@ -3,8 +3,15 @@ import psycopg2
 
 def get_connection():
     database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        raise RuntimeError("DATABASE_URL não configurada no Render (Environment).")
-    return psycopg2.connect(database_url)
+    if database_url:
+        return psycopg2.connect(database_url)
 
-conexion = get_connection()
+    return psycopg2.connect(
+        dbname="controle_atendimentos",
+        user="postgres",
+        password="Renan1013",
+        host="localhost",
+        port="5432"
+    )
+
+

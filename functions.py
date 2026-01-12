@@ -1,10 +1,11 @@
-from variables import conexion
+from variables import get_connection
 import pandas as pd
 from flask import jsonify
 from datetime import date
 
 def tabela_atendimentos():
     
+    conexion = get_connection()
     cursor = None
     try:
         cursor = conexion.cursor()
@@ -44,7 +45,8 @@ def tabela_atendimentos():
     finally:
         if cursor:
             cursor.close()
-
+        conexion.close()
+        
     return df_last_month, df_all, atendimentos_total, valor_total_mes 
  
 
@@ -52,6 +54,7 @@ def tabela_atendimentos():
  
 def novo_atendimento(nome_cliente,data_sessao, valor, status, data_pagamento):
     
+    conexion = get_connection()
     cursor = None
     
     status = status.lower().strip()
@@ -79,12 +82,14 @@ def novo_atendimento(nome_cliente,data_sessao, valor, status, data_pagamento):
     finally:
         if cursor:
             cursor.close()
+        conexion.close()
     return True
             
 
 
 def marcar_pago(ids: list[int], data_pagamento = None) -> int:
     
+    conexion = get_connection()
     cursor = None
     
     if not ids:
@@ -117,11 +122,13 @@ def marcar_pago(ids: list[int], data_pagamento = None) -> int:
     finally:
         if cursor:
             cursor.close()
-    
+        conexion.close()
 
 
 def dados_graficos(ultimos_meses=12):
     
+    
+    conexion = get_connection()
     cursor = None
     
     try:
@@ -160,4 +167,4 @@ def dados_graficos(ultimos_meses=12):
     finally:
         if cursor:
             cursor.close()    
-    
+        conexion.close()
