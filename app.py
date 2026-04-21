@@ -78,31 +78,40 @@ def home():
 @login_required
 def dashboard():
     
-    df_last_month, df_all ,atendimentos_total, valor_total_mes = tabela_atendimentos()    
-    linhas_tabela_principal = df_all.to_dict(orient='records')
+    df_last_month, df_all, _, _ = tabela_atendimentos()
+
+    # ✅ converter tipos PRIMEIRO
     df_last_month["valor"] = pd.to_numeric(df_last_month["valor"], errors="coerce").fillna(0)
+    df_last_month['data_sessao'] = pd.to_datetime(df_last_month['data_sessao'])
 
-    
-    mes_ref = (pd.Timestamp.today().replace(day=1) - pd.offsets.MonthBegin(1))
-    nome_mes = MESES_PT[mes_ref.month]
-    ano_ref = mes_ref.year
+    # ✅ mês atual (KPIs)
+    hoje = pd.Timestamp.today()
 
-  
+    df_mes_atual = df_last_month[
+        (df_last_month['data_sessao'].dt.month == hoje.month) &
+        (df_last_month['data_sessao'].dt.year == hoje.year)
+    ]
+
+    # ✅ tabela principal
+    linhas_tabela_principal = df_all.to_dict(orient='records')
+
+    # ✅ pendentes (todos os meses — decisão sua)
     pendentes_df = df_last_month[df_last_month['status'] == 'pendente']
 
-
-    
     pendentes = pendentes_df.to_dict(orient='records')
 
+    # ✅ agrupamento para mensagens (com proteção)
+    if not pendentes_df.empty:
+        pendentes_msg_df = pendentes_df.groupby('nome_cliente').agg(
+            valores=("valor", list),
+            datas=("data_sessao", list)
+        ).reset_index()
+    else:
+        pendentes_msg_df = pd.DataFrame(columns=["nome_cliente", "valores", "datas"])
 
-    
-    pendentes_msg_df = pendentes_df.groupby('nome_cliente').agg(
-        valores=("valor", list),
-        datas=("data_sessao", list)
-    ).reset_index()
-    
     pendentes_msg = pendentes_msg_df.to_dict(orient='records')
 
+    # ✅ montar mensagens
     for p in pendentes_msg:
         datas_fmt = [d.strftime("%d/%m") for d in p["datas"]]
 
@@ -120,36 +129,38 @@ def dashboard():
             f"O fechamento dos atendimentos do/a {p['nome_cliente']} "
             f"({datas_txt}) totaliza R$ {total_fmt}."
         )
-    
-    
+
+    # ✅ gráficos (mantido)
     atend_mes, rec_mes = dados_graficos()
-    
+
     atend_dict = {mes: qtd for (mes, qtd) in atend_mes}
-    
-    rec_dict = {mes: float(total) for(mes, total) in rec_mes}
-    
+    rec_dict = {mes: float(total) for (mes, total) in rec_mes}
+
     meses = sorted(
-            m for m in (set(atend_dict.keys()) | set(rec_dict.keys()))
-            if m is not None
-        )
-    
+        m for m in (set(atend_dict.keys()) | set(rec_dict.keys()))
+        if m is not None
+    )
+
     labels_meses = [f'{MESES_PT[m.month]}/{m.year}' for m in meses]
-    
+
     serie_atendimentos = [int(atend_dict.get(m, 0)) for m in meses]
-    serie_recebido = [int(rec_dict.get(m,0)) for m in meses]
-    
-        
+    serie_recebido = [int(rec_dict.get(m, 0)) for m in meses]
+
+    # ✅ KPIs (agora corretas)
+    atendimentos_total = len(df_mes_atual)
+    valor_total_mes = float(df_mes_atual['valor'].sum())
+
     return render_template(
         "index.html",
-        atendimentos_total = atendimentos_total,
-        valor_total_mes = valor_total_mes,
-        atendimentos = linhas_tabela_principal,
-        pendentes = pendentes,
+        atendimentos_total=atendimentos_total,
+        valor_total_mes=valor_total_mes,
+        atendimentos=linhas_tabela_principal,
+        pendentes=pendentes,
         pendentes_msg=pendentes_msg,
         labels_meses=labels_meses,
         serie_atendimentos=serie_atendimentos,
         serie_recebido=serie_recebido,
-)
+    )
 
 @app.route("/novo_atendimento", methods = ['POST'])
 @login_required
