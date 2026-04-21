@@ -11,8 +11,6 @@ def tabela_atendimentos():
         cursor = conexion.cursor()
         query = """SELECT *
             FROM public.atendimentos
-            WHERE data_sessao >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month'
-            AND data_sessao <  date_trunc('month', CURRENT_DATE)
             ORDER BY data_sessao, nome_cliente;
         """
         cursor.execute(query)
@@ -106,8 +104,6 @@ def marcar_pago(ids: list[int], data_pagamento = None) -> int:
         SET status = 'pago', data_pagamento = %s 
         WHERE id IN %s 
         AND status = 'pendente'  
-        AND data_sessao >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month'
-            AND data_sessao <  date_trunc('month', CURRENT_DATE)
         """
         
         cursor.execute(query, (data_pagamento, ids_tuple))

@@ -78,29 +78,33 @@ def home():
 @login_required
 def dashboard():
     
-    df_last_month, df_all ,atendimentos_total, valor_total_mes = tabela_atendimentos()
-    
-
-    
+    df_last_month, df_all ,atendimentos_total, valor_total_mes = tabela_atendimentos()    
     linhas_tabela_principal = df_all.to_dict(orient='records')
-    
-    
     df_last_month["valor"] = pd.to_numeric(df_last_month["valor"], errors="coerce").fillna(0)
 
-    pendentes = df_last_month[df_last_month['status'] == 'pendente']
-    
-    pendentes = pendentes.groupby('nome_cliente', as_index= False).agg(total_pendente = ("valor", "sum"), ids =("id", lambda s: list(s)),
-    datas=("data_sessao", lambda s: list(s)))
-    
-    pendentes = pendentes.to_dict(orient='records')
     
     mes_ref = (pd.Timestamp.today().replace(day=1) - pd.offsets.MonthBegin(1))
     nome_mes = MESES_PT[mes_ref.month]
     ano_ref = mes_ref.year
 
-    for p in pendentes:
-        datas = p["datas"]                 
-        datas_fmt = [d.strftime("%d/%m") for d in datas]
+  
+    pendentes_df = df_last_month[df_last_month['status'] == 'pendente']
+
+
+    
+    pendentes = pendentes_df.to_dict(orient='records')
+
+
+    
+    pendentes_msg_df = pendentes_df.groupby('nome_cliente').agg(
+        valores=("valor", list),
+        datas=("data_sessao", list)
+    ).reset_index()
+    
+    pendentes_msg = pendentes_msg_df.to_dict(orient='records')
+
+    for p in pendentes_msg:
+        datas_fmt = [d.strftime("%d/%m") for d in p["datas"]]
 
         if len(datas_fmt) == 1:
             datas_txt = datas_fmt[0]
@@ -109,18 +113,13 @@ def dashboard():
         else:
             datas_txt = ", ".join(datas_fmt[:-1]) + " e " + datas_fmt[-1]
 
-        qtd = len(datas)
-        sessao_txt = "sessão" if qtd == 1 else "sessões"
-        total = float(p["total_pendente"])
-
+        total = sum([float(v) for v in p["valores"]])
         total_fmt = f"{total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
         p["mensagem"] = (
-            f"O fechamento dos atendimentos do/a {p['nome_cliente']} no mês de "
-            f"{nome_mes}/{ano_ref} foi de {qtd} {sessao_txt} "
-            f"({datas_txt}), totalizando R${total_fmt}."
+            f"O fechamento dos atendimentos do/a {p['nome_cliente']} "
+            f"({datas_txt}) totaliza R$ {total_fmt}."
         )
-
     
     
     atend_mes, rec_mes = dados_graficos()
@@ -146,7 +145,8 @@ def dashboard():
         valor_total_mes = valor_total_mes,
         atendimentos = linhas_tabela_principal,
         pendentes = pendentes,
-          labels_meses=labels_meses,
+        pendentes_msg=pendentes_msg,
+        labels_meses=labels_meses,
         serie_atendimentos=serie_atendimentos,
         serie_recebido=serie_recebido,
 )
